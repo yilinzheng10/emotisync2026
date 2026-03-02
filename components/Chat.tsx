@@ -16,6 +16,7 @@ type Task = {
   afterColor: string;
   before: string | null;
   after: string | null;
+  emoji: string;
 };
 
 export default function ClientComponent({ accessToken }: { accessToken: string }) {
@@ -63,14 +64,23 @@ export default function ClientComponent({ accessToken }: { accessToken: string }
     return "Moderate-Stress Emotions"; // fallback
   };
 
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hrs = minutes / 60;
+    return hrs === Math.floor(hrs) ? `${hrs} hr` : `${hrs.toFixed(1)} hr`;
+  };
+
+  const cardWidth = (minutes: number) => Math.max(200, 150 + minutes * 10);
+
   const mapApiTasks = (items: any[]): Task[] =>
     items.map((item) => ({
       task: item["Subject"],
-      duration: item["Duration"] || 1,
+      duration: item["Duration"] || 30,
       beforeColor: expressionColors[item["Before Task Emotion"] as keyof typeof expressionColors] || fallbackColor,
       afterColor: expressionColors[item["After Task Emotion"] as keyof typeof expressionColors] || fallbackColor,
       before: item["Before Task Emotion"],
       after: item["After Task Emotion"],
+      emoji: item["Emoji"] || "✨",
     }));
 
   const fetchTasksForEmotion = async (emotion: string): Promise<Task[]> => {
@@ -125,9 +135,10 @@ export default function ClientComponent({ accessToken }: { accessToken: string }
           }, 200);
         }}
       >
-        <div ref={ref} className="flex flex-col items-center justify-center h-screen w-[900px]">
+       <div ref={ref} className="h-screen w-full overflow-y-auto">
+          <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-[900px] mx-auto px-4">
 
-          <Messages values={emotionScores} />
+            <Messages values={emotionScores} />
 
           {/* Background video — disabled
           {selectedTask && (() => {
@@ -170,25 +181,38 @@ export default function ClientComponent({ accessToken }: { accessToken: string }
                     }}
                     className="relative cursor-pointer p-4 rounded-2xl text-white shadow-md flex flex-col items-center justify-center overflow-hidden break-words transition-all duration-500 z-10"
                     style={{
-                      width: 300 + (task.duration || 1) * 300,
+                      width: cardWidth(task.duration || 30),
+                      maxWidth: "calc(100vw - 2rem)",
                       background: `linear-gradient(135deg, ${task.beforeColor}, ${task.afterColor})`,
                     }}
                   >
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="xMinYMid meet" className="absolute" style={{ width: "100%", height: "100%", top: 0, left: 0, color: "rgba(255, 255, 255, 0.75)", fontFamily: "'Playfair Display', serif", fontWeight: 400, textAlign: "center", zIndex: 2, pointerEvents: "none" }}>
-                      <text x="150" y="50" textAnchor="middle" dominantBaseline="central" fontSize="80" fill="rgba(255, 255, 255, 0.75)">{task.duration} hr</text>
-                    </svg>
-                    <div className="text-center px-4 leading-snug break-words z-30" style={{ color: "black", fontSize: "24px", fontWeight: 600, lineHeight: "1" }}>{task.task}</div>
+<div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none z-10" style={{ padding: "0 24px" }}>
+  <span style={{ display: "flex", alignItems: "baseline", gap: "6px", whiteSpace: "nowrap", lineHeight: 1, color: "rgba(255,255,255,0.55)", letterSpacing: "-2px" }}>
+    <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(70px, 20vw, 130px)", fontWeight: 400 }}>
+      {formatDuration(task.duration || 30).split(" ")[0]}
+    </span>
+    <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(20px, 6vw, 44px)", fontWeight: 300 }}>
+      {formatDuration(task.duration || 30).split(" ")[1]}
+    </span>
+  </span>
+</div>
+
+
+                    <div className="z-30 flex flex-col items-center gap-2">
+                      <span style={{ fontSize: "40px", lineHeight: 1 }}>{task.emoji}</span>
+                      <div className="text-center px-4 leading-snug break-words" style={{ color: "black", fontSize: "24px", fontWeight: 600, lineHeight: "1.2" }}>{task.task}</div>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-row items-start justify-center gap-16">
+              <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-8 md:gap-16 w-full">
                 {/* Selected Task */}
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center w-full md:w-auto">
                   <div
                     key={selectedTask.task}
-                    className="relative cursor-pointer p-6 rounded-2xl text-white shadow-lg flex flex-col items-center justify-center overflow-hidden break-words transition-all duration-500 z-10"
-                    style={{ minWidth: "300px", background: `linear-gradient(135deg, ${selectedTask.beforeColor}, ${selectedTask.afterColor})` }}
+                    className="relative cursor-pointer p-6 rounded-2xl text-white shadow-lg flex flex-col items-center justify-center overflow-hidden break-words transition-all duration-500 z-10 w-full md:w-auto"
+                    style={{ width: cardWidth(selectedTask.duration || 30), maxWidth: "calc(100vw - 2rem)", background: `linear-gradient(135deg, ${selectedTask.beforeColor}, ${selectedTask.afterColor})` }}
                   >
                     <div className="absolute inset-0 rounded-2xl pointer-events-none z-20">
                       <div className="absolute top-0 left-0 h-1 bg-white rounded-t-2xl origin-left animate-grow-width" />
@@ -196,15 +220,27 @@ export default function ClientComponent({ accessToken }: { accessToken: string }
                       <div className="absolute bottom-0 right-0 h-1 bg-white rounded-b-2xl origin-right animate-grow-width" style={{ animationDelay: "25s" }} />
                       <div className="absolute bottom-0 left-0 w-1 bg-white rounded-bl-2xl origin-bottom animate-grow-height" style={{ animationDelay: "37.5s" }} />
                     </div>
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="xMinYMid meet" className="absolute" style={{ width: "100%", height: "100%", top: 0, left: 0, color: "rgba(255, 255, 255, 0.75)", fontFamily: "'Playfair Display', serif", fontWeight: 400, textAlign: "center", zIndex: 2, pointerEvents: "none" }}>
-                      <text x="150" y="50" textAnchor="middle" dominantBaseline="central" fontSize="80" fill="rgba(255, 255, 255, 0.75)">{selectedTask.duration} hr</text>
-                    </svg>
-                    <div className="text-center px-4 leading-snug break-words z-30" style={{ color: "black", fontSize: "26px", fontWeight: 700, lineHeight: "1" }}>{selectedTask.task}</div>
+<div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none z-10" style={{ padding: "0 24px" }}>
+  <span style={{ display: "flex", alignItems: "baseline", gap: "6px", whiteSpace: "nowrap", lineHeight: 1, color: "rgba(255,255,255,0.55)", letterSpacing: "-2px" }}>
+    <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(70px, 20vw, 130px)", fontWeight: 400 }}>
+      {formatDuration(selectedTask.duration || 30).split(" ")[0]}
+    </span>
+    <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(20px, 6vw, 44px)", fontWeight: 300 }}>
+      {formatDuration(selectedTask.duration || 30).split(" ")[1]}
+    </span>
+  </span>
+</div>
+
+
+                    <div className="z-30 flex flex-col items-center gap-2">
+                      <span style={{ fontSize: "48px", lineHeight: 1 }}>{selectedTask.emoji}</span>
+                      <div className="text-center px-4 leading-snug break-words" style={{ color: "black", fontSize: "26px", fontWeight: 700, lineHeight: "1.2" }}>{selectedTask.task}</div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Chained Tasks */}
-                <div className="flex flex-col items-start gap-6">
+                <div className="flex flex-col items-center md:items-start gap-6 w-full md:w-auto">
                   {chainedTasks.map((task, idx) => (
                     <div
                       key={"chained-" + idx}
@@ -218,20 +254,35 @@ export default function ClientComponent({ accessToken }: { accessToken: string }
                       className="relative cursor-pointer p-4 rounded-2xl text-white shadow-md flex flex-col items-center justify-center overflow-hidden break-words transition-all duration-500 z-10"
                       style={{
                         opacity: 0.5,
-                        minWidth: "280px",
-                        maxWidth: "90%",
+                        width: cardWidth(task.duration || 30),
+                        maxWidth: "calc(100vw - 2rem)",
                         background: `linear-gradient(135deg, ${task.beforeColor}, ${task.afterColor})`,
                       }}
                     >
-                      <svg viewBox="0 0 100 100" preserveAspectRatio="xMinYMid meet" className="absolute" style={{ width: "100%", height: "100%", top: 0, left: 0, color: "rgba(255, 255, 255, 0.75)", fontFamily: "'Playfair Display', serif", fontWeight: 400, textAlign: "center", zIndex: 2, pointerEvents: "none" }}>
-                        <text x="150" y="50" textAnchor="middle" dominantBaseline="central" fontSize="80" fill="rgba(255, 255, 255, 0.75)">{task.duration} hr</text>
-                      </svg>
-                      <div className="text-center px-4 leading-snug break-words z-30" style={{ color: "black", fontSize: "24px", fontWeight: 600, lineHeight: "1" }}>{task.task}</div>
+
+<div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none z-10" style={{ padding: "0 24px" }}>
+  <span style={{ display: "flex", alignItems: "baseline", gap: "6px", whiteSpace: "nowrap", lineHeight: 1, color: "rgba(255,255,255,0.55)", letterSpacing: "-2px" }}>
+    <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(70px, 20vw, 130px)", fontWeight: 400 }}>
+      {formatDuration(task.duration || 30).split(" ")[0]}
+    </span>
+    <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(20px, 6vw, 44px)", fontWeight: 300 }}>
+      {formatDuration(task.duration || 30).split(" ")[1]}
+    </span>
+  </span>
+</div>
+
+
+
+                      <div className="z-30 flex flex-col items-center gap-2">
+                        <span style={{ fontSize: "36px", lineHeight: 1 }}>{task.emoji}</span>
+                        <div className="text-center px-4 leading-snug break-words" style={{ color: "black", fontSize: "24px", fontWeight: 600, lineHeight: "1.2" }}>{task.task}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
         <Controls />

@@ -18,7 +18,8 @@ Return ONLY a valid JSON array with no extra text, markdown, or code fences. Eac
 - "Subject": the task name (string, concise, 3–8 words)
 - "Before Task Emotion": "${topEmotion}" (string, exactly as given)
 - "After Task Emotion": the expected emotion after completing this task (string — one Hume AI emotion label such as "calmness", "joy", "relief", "satisfaction", "contentment", "excitement", "gratitude", "amusement", "interest", "concentration")
-- "Duration": estimated hours to complete (number, increments of 0.5, range 0.5–3)
+- "Duration": realistic estimated time in minutes (number — choose naturally, e.g. 10, 15, 20, 30, 45, 60, 90, 120, 180. A quick meditation might be 10 min; a gym session 60 min; a long walk 30 min. Do NOT round to arbitrary increments — pick what actually fits the task)
+- "Emoji": a single emoji that visually represents the task activity (e.g. 🚶 for walking, 🎵 for music, 📖 for reading, 🧘 for meditation)
 
 Example for 1 task:
 [
@@ -26,7 +27,8 @@ Example for 1 task:
     "Subject": "Take a short walk outside",
     "Before Task Emotion": "${topEmotion}",
     "After Task Emotion": "calmness",
-    "Duration": 0.5
+    "Duration": 30,
+    "Emoji": "🚶"
   }
 ]`;
 
